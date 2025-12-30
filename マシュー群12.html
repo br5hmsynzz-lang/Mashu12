@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M12 置換パズル - Challenge</title>
+    <style>
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            background-color: #1e1e2f; color: #ffffff; padding: 20px;
+        }
+        h1 { margin-bottom: 5px; color: #ffcc00; }
+        .counter { font-size: 1.2rem; margin-bottom: 20px; color: #aaa; }
+        
+        .container {
+            width: 100%; overflow-x: auto; padding: 20px 0;
+            display: flex; justify-content: center;
+        }
+        .grid { display: flex; gap: 8px; padding: 10px; }
+        
+        .card { 
+            min-width: 45px; height: 65px; background: #2d2d44; 
+            border: 2px solid #555; border-radius: 6px;
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 1.3rem; font-weight: bold; color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: 0.2s;
+        }
+        
+        .correct { border-color: #00ff88; color: #00ff88; background: #2d443a; }
+
+        .controls { margin-top: 30px; }
+        button { 
+            padding: 15px 30px; font-size: 1.1rem; cursor: pointer; margin: 10px; 
+            border-radius: 50px; border: none; font-weight: bold;
+            transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn-a { background: linear-gradient(135deg, #6e8efb, #a777e3); color: white; }
+        .btn-b { background: linear-gradient(135deg, #ff9a9e, #fecfef); color: #333; }
+        button:hover { transform: scale(1.05); filter: brightness(1.1); }
+        button:active { transform: scale(0.95); }
+
+        .status { margin-top: 20px; font-size: 1.4rem; font-weight: bold; height: 1.5em; }
+        .info-box { 
+            margin-top: 40px; padding: 15px; background: rgba(255,255,255,0.05); 
+            border-radius: 10px; font-size: 0.85rem; color: #ccc; max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>M12 置換パズル</h1>
+    <div class="counter" id="counter">Moves: 0</div>
+    
+    <div class="container">
+        <div class="grid" id="board"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-a" onclick="applyPermutation('a')">操作 a</button>
+        <button class="btn-b" onclick="applyPermutation('b')">操作 b</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="info-box">
+        <strong>遊び方:</strong><br>
+        2つの操作を組み合わせて、数字を左から 1, 2, ..., 12 の順に並べてください。
+        初期状態は $M_{12}$ の要素によってランダムにシャッフルされています。
+    </div>
+
+    <script>
+        let state = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        const goal = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+        let moves = 0;
+
+        // 生成元 a: (1,2,3,4,5,6,7,8,9,10,11) 11点は固定
+        const permA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 11]; 
+        // 生成元 b: (1,10)(2,5)(3,7)(4,8)(6,9)(11,12)
+        const permB = [9, 4, 6, 7, 1, 8, 2, 3, 5, 0, 11, 10];
+
+        function render() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            state.forEach((num, index) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                if (num === goal[index]) card.classList.add('correct');
+                card.textContent = num;
+                board.appendChild(card);
+            });
+            document.getElementById('counter').textContent = `Moves: ${moves}`;
+        }
+
+        function applyPermutation(type, isShuffling = false) {
+            const p = type === 'a' ? permA : permB;
+            const newState = new Array(12);
+            for (let i = 0; i < 12; i++) {
+                newState[p[i]] = state[i];
+            }
+            state = newState;
+            
+            if (!isShuffling) {
+                moves++;
+                render();
+                checkWin();
+            }
+        }
+
+        function shuffle() {
+            // 十分な回数ランダムに操作を適用して初期化
+            for (let i = 0; i < 40; i++) {
+                const type = Math.random() > 0.5 ? 'a' : 'b';
+                applyPermutation(type, true);
+            }
+            // 万が一最初から揃ってしまった場合（稀）はもう一度
+            if (state.every((val, index) => val === goal[index])) shuffle();
+            render();
+        }
+
+        function checkWin() {
+            if (state.every((val, index) => val === goal[index])) {
+                document.getElementById('status').textContent = "🎉 CLEAR! 🎉";
+                document.getElementById('status').style.color = "#00ff88";
+                document.querySelectorAll('button').forEach(b => b.disabled = true);
+            }
+        }
+
+        // 初期実行
+        shuffle();
+    </script>
+</body>
+</html>
